@@ -5,7 +5,7 @@ const Header = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="flex flex-col items-center pt-32 px-4 text-center text-gray-800"> 
+        <div className="flex flex-col items-center mt-10 px-4 text-center text-gray-800"> 
             <img
                 className="mb-8 drop-shadow-md"
                 width={280}
