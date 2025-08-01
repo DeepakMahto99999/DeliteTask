@@ -2,36 +2,65 @@ import { useState } from 'react'
 import { assets } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
 import OAuth from '../components/OAuth'
+import axios from 'axios' // 🔧 added
+
+const backendUrl = import.meta.env.VITE_BACKEND_URL // 🔧 added
 
 const Login = () => {
   const [state, setState] = useState('Sign Up') // or 'Sign In'
-  const [step, setStep] = useState(1) // Step 1: get OTP, Step 2: enter OTP
+  const [step, setStep] = useState(1)
   const [name, setName] = useState('')
   const [dob, setDob] = useState('')
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [keepLoggedIn, setKeepLoggedIn] = useState(false)
+  const [userId, setUserId] = useState('') // 🔧 added
 
   const navigate = useNavigate()
 
-  const onSubmitHandler = (e) => {
+  const onSubmitHandler = async (e) => {
     e.preventDefault()
-    if (step === 1) {
-      // Simulate sending OTP
-      setStep(2)
-    } else {
-      // Simulate auth success
-      console.log({ name, dob, email, otp, keepLoggedIn })
-      navigate('/dashboard') // Example route
+
+    try {
+      if (step === 1) {
+        // 🔧 Step 1: Send OTP based on flow
+        if (state === 'Sign Up') {
+          const res = await axios.post(`${backendUrl}/api/auth/register`, { name, dob, email }) // 🔧 added
+          if (res.data.success) {
+            setUserId(res.data.userId) // 🔧 added
+            setStep(2)
+          } else {
+            alert(res.data.message)
+          }
+        } else {
+          const res = await axios.post(`${backendUrl}/api/auth/login`, { email }) // 🔧 added
+          if (res.data.success) {
+            setUserId(res.data.userId) // 🔧 added
+            setStep(2)
+          } else {
+            alert(res.data.message)
+          }
+        }
+      } else {
+        // 🔧 Step 2: Verify OTP
+        const res = await axios.post(`${backendUrl}/api/auth/verify`, { userId, otp }) // 🔧 added
+        if (res.data.success) {
+          alert('Authentication successful!')
+          navigate('/dashboard')
+        } else {
+          alert(res.data.message)
+        }
+      }
+    } catch (error) {
+     console.error(' Axios error:', error.response?.data || error.message)
+     alert(error.response?.data?.message || 'Something went wrong. Try again!')
     }
   }
 
   return (
     <div className='flex flex-col md:flex-row min-h-screen bg-gray-50'>
-
       {/* Left Section - Form */}
       <div className='flex flex-1 justify-center items-center px-6 py-8'>
-        
         <form
           onSubmit={onSubmitHandler}
           className='w-full max-w-md bg-white shadow-lg rounded-2xl p-8 space-y-5'
@@ -75,7 +104,7 @@ const Login = () => {
             </>
           )}
 
-          {/* Email Field (shared) */}
+          {/* Email Field */}
           <div>
             <label className='text-sm font-medium text-gray-700'>Email</label>
             <input
@@ -87,7 +116,7 @@ const Login = () => {
             />
           </div>
 
-          {/* OTP Step */}
+          {/* OTP Field */}
           {step === 2 && (
             <div>
               <label className='text-sm font-medium text-gray-700'>OTP</label>
@@ -101,7 +130,7 @@ const Login = () => {
             </div>
           )}
 
-          {/* Additional Options for Sign In */}
+          {/* Sign In Extra Options */}
           {state === 'Sign In' && step === 2 && (
             <div className='flex justify-between items-center'>
               <span className='text-sm text-blue-600 hover:underline cursor-pointer'>
@@ -130,8 +159,10 @@ const Login = () => {
               ? 'Sign up'
               : 'Sign in'}
           </button>
-            <OAuth/>
-          {/* Toggle Link */}
+
+          <OAuth />
+
+          {/* Switch Link */}
           <p className='text-center text-sm text-gray-600'>
             {state === 'Sign Up'
               ? 'Already have an account?'
@@ -149,14 +180,14 @@ const Login = () => {
         </form>
       </div>
 
-      {/* Right Section - Image */}
+      {/* Right Section */}
       <div className='hidden md:flex flex-1'>
         <img
           src={assets.home_img}
           alt='HD visual'
           className='object-cover w-full h-full'
         />
-      </div> 
+      </div>
     </div>
   )
 }
