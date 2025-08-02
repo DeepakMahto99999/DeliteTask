@@ -6,6 +6,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
 import ProtectedRoutes from './components/protectedRoutes';
+import NoteDetail from './components/NoteDetail';
 
 const App = () => {
   return (
@@ -18,6 +19,11 @@ const App = () => {
         <Route path='/dashboard' element={
           <ProtectedRoutes>
             <Dashboard />
+          </ProtectedRoutes>
+        } /> 
+        <Route path='/dashboard/:noteId' element={
+          <ProtectedRoutes>
+            <NoteDetail />
           </ProtectedRoutes>
         } />
         <Route path='*' element={<NotFound />} />
