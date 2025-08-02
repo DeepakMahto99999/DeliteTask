@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { assets } from '../assets/assets';
+import { useAuth } from '../context/ContextProvider';
 
 const Navbar = () => {
     const navigate = useNavigate();
     const [showMenu, setShowMenu] = useState(false);
+    
+    //  NEW: Get user and logout function from auth context
+    const { user, logout } = useAuth();
 
-    const userData = {
-        // Replace with real auth logic
-        // email: 'user@example.com'
-    };
-
+    //  UPDATED: Handle logout properly with context
     const handleLogout = () => {
+        logout(); // Clear user data and tokens
+        navigate('/'); // Redirect to home page
+        setShowMenu(false); // Close mobile menu if open
         console.log('User logged out');
     };
 
@@ -41,15 +44,17 @@ const Navbar = () => {
                 </NavLink>
             </nav>
 
-            {/* Auth Button (desktop only) */}
-            {userData && userData.email ? (
-                <button
-                    onClick={handleLogout}
-                    className='hidden md:flex items-center gap-2 border border-gray-500 rounded-full px-6 py-2 text-gray-800 hover:bg-gray-100'
-                >
-                    Sign Out
-                    <img src={assets.arrow_icon} alt="arrow icon" />
-                </button>
+            {/* 🔧 UPDATED: Auth Button (desktop only) - Now uses context user state */}
+            {user ? (
+                <div className='hidden md:flex items-center gap-3'>
+                    <button
+                        onClick={handleLogout}
+                        className='flex items-center gap-2 border border-gray-500 rounded-full px-6 py-2 text-gray-800 hover:bg-gray-100'
+                    >
+                        Sign Out
+                        <img src={assets.arrow_icon} alt="arrow icon" />
+                    </button>
+                </div>
             ) : (
                 <button
                     onClick={() => navigate('/login')}
@@ -111,6 +116,31 @@ const Navbar = () => {
                     >
                         Dashboard
                     </NavLink>
+                    
+                    {/* 🔧 NEW: Mobile auth buttons */}
+                    {user ? (
+                        <>
+                            {/* 🔧 NEW: Show user info in mobile menu */}
+                            <div className='px-4 py-2 text-center text-gray-600 border-t border-gray-200 w-full mt-4'>
+                                <p className='text-sm'>Logged in as:</p>
+                                <p className='font-medium'>{user.name || user.email}</p>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className='px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 w-full text-center'
+                            >
+                                Sign Out
+                            </button>
+                        </>
+                    ) : (
+                        <NavLink
+                            onClick={() => setShowMenu(false)}
+                            to='/login'
+                            className='px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 w-full text-center'
+                        >
+                            Login
+                        </NavLink>
+                    )}
                 </ul>
             </div>
         </header>

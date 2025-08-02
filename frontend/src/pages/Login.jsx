@@ -2,58 +2,100 @@ import { useState } from 'react'
 import { assets } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
 import OAuth from '../components/OAuth'
-import axios from 'axios' // 🔧 added
+import axios from 'axios'
+import { toast } from 'react-toastify'
+import { useAuth } from '../context/ContextProvider' // Add this import
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL // 🔧 added
+const backendUrl = import.meta.env.VITE_BACKEND_URL
 
 const Login = () => {
-  const [state, setState] = useState('Sign Up') // or 'Sign In'
+  const [state, setState] = useState('Sign Up')
   const [step, setStep] = useState(1)
   const [name, setName] = useState('')
   const [dob, setDob] = useState('')
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [keepLoggedIn, setKeepLoggedIn] = useState(false)
-  const [userId, setUserId] = useState('') // 🔧 added
+  const [userId, setUserId] = useState('')
+  const [loginToken, setLoginToken] = useState('') // Store token from login step
 
   const navigate = useNavigate()
+  const { login } = useAuth() // Get login function from context
 
   const onSubmitHandler = async (e) => {
     e.preventDefault()
 
     try {
       if (step === 1) {
-        // 🔧 Step 1: Send OTP based on flow
+        // Step 1: Send OTP based on flow
         if (state === 'Sign Up') {
-          const res = await axios.post(`${backendUrl}/api/auth/register`, { name, dob, email }) // 🔧 added
+          const res = await axios.post(`${backendUrl}/api/auth/register`, { name, dob, email })
           if (res.data.success) {
-            setUserId(res.data.userId) // 🔧 added
+            setUserId(res.data.userId)
             setStep(2)
+            toast.success('OTP sent to your email!')
           } else {
-            alert(res.data.message)
+            toast.error(res.data.message)
           }
         } else {
-          const res = await axios.post(`${backendUrl}/api/auth/login`, { email }) // 🔧 added
+          const res = await axios.post(`${backendUrl}/api/auth/login`, { email })
           if (res.data.success) {
-            setUserId(res.data.userId) // 🔧 added
+            setUserId(res.data.userId)
+            setLoginToken(res.data.token) // 🔧 Store token from login
             setStep(2)
+            toast.success('OTP sent to your email!')
           } else {
-            alert(res.data.message)
+            toast.error(res.data.message)
           }
         }
       } else {
-        // 🔧 Step 2: Verify OTP
-        const res = await axios.post(`${backendUrl}/api/auth/verify`, { userId, otp }) // 🔧 added
+        // Step 2: Verify OTP
+        const res = await axios.post(`${backendUrl}/api/auth/verify`, { userId, otp })
+        
+        console.log('Verify OTP Response:', res.data)
+        
         if (res.data.success) {
-          alert('Authentication successful!')
-          navigate('/dashboard')
+          // Create token and user data
+          let token, user;
+          
+          // If backend returns token and user (after you fix backend)
+          if (res.data.token && res.data.user) {
+            token = res.data.token;
+            user = res.data.user;
+          } 
+          // Fallback: Use token from login step or create new session
+          else {
+            token = loginToken || `verified-${userId}-${Date.now()}`;
+            user = {
+              id: userId,
+              email: email,
+              name: name || 'User',
+              verified: true,
+              loginTime: new Date().toISOString()
+            };
+          }
+          
+          // Save to localStorage
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
+          
+          // Update context
+          login(user);
+          
+          // Optional: Save keepLoggedIn preference
+          if (keepLoggedIn) {
+            localStorage.setItem('keepLoggedIn', 'true');
+          }
+          
+          toast.success('Authentication successful!');
+          navigate('/dashboard');
         } else {
-          alert(res.data.message)
+          toast.error(res.data.message);
         }
       }
     } catch (error) {
-     console.error(' Axios error:', error.response?.data || error.message)
-     alert(error.response?.data?.message || 'Something went wrong. Try again!')
+      console.error('Axios error:', error.response?.data || error.message)
+      toast.error(error.response?.data?.message || 'Something went wrong. Try again!')
     }
   }
 
@@ -151,7 +193,7 @@ const Login = () => {
           {/* Submit Button */}
           <button
             type='submit'
-            className='w-full bg-gradient-to-r from-blue-600 to-indigo-00 text-white py-2 rounded-md font-medium hover:from-blue-600 hover:to-indigo-700 transition'
+            className='w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded-md font-medium hover:from-blue-700 hover:to-indigo-700 transition'
           >
             {step === 1
               ? 'Get OTP'
@@ -171,6 +213,7 @@ const Login = () => {
               onClick={() => {
                 setState(state === 'Sign Up' ? 'Sign In' : 'Sign Up')
                 setStep(1)
+                setLoginToken('') // Clear any stored token
               }}
               className='text-blue-600 font-medium cursor-pointer hover:underline'
             >

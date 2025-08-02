@@ -16,7 +16,9 @@ const App = () => {
         <Route path='/' element={<Home />} />
         <Route path='/login' element={<Login />} />
         <Route path='/dashboard' element={
-           <Dashboard />
+          <ProtectedRoutes>
+            <Dashboard />
+          </ProtectedRoutes>
         } />
         <Route path='*' element={<NotFound />} />
       </Routes>
@@ -24,8 +26,6 @@ const App = () => {
   )
 }
 
-export default App 
+export default App
 
-    // <ProtectedRoutes>
-    //         <Dashboard />
-    //       </ProtectedRoutes>
+

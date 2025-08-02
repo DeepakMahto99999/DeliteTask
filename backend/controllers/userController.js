@@ -22,7 +22,7 @@ export const register = async (req, res) => {
     user.otpExpireAt = Date.now() + 15 * 60 * 1000;
     console.log('Saving user to database...');
     await user.save();
-     console.log('User saved successfully.');
+    console.log('User saved successfully.');
 
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
@@ -105,5 +105,31 @@ export const verifyOTP = async (req, res) => {
 
   } catch (error) {
     return res.json({ success: false, message: error.message });
+  }
+};
+
+export const googleLoginAndRegister = async (req, res) => {
+  try {
+    const { name, email } = req.body; 
+
+    const user = await userModel.findOne({ email });
+    
+    if (user) {
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+      res.json({ success: true, token, user: { name: user.name, email: user.email } });
+    } else {
+      const newUser = new userModel({
+        name,
+        email,
+      });
+
+      await newUser.save();
+
+      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
+      res.json({ success: true, token, user: { name: newUser.name, email: newUser.email } });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
