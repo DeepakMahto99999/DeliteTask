@@ -1,6 +1,7 @@
 import { EMAIL_VERIFY_TEMPLATE } from '../congfig/emailTemplates.js';
 import transporter from '../congfig/nodemailer.js'
 import userModel from '../models/userModel.js'
+
 import jwt from 'jsonwebtoken'
 
 export const register = async (req, res) => {
