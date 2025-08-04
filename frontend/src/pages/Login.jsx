@@ -54,42 +54,43 @@ const Login = () => {
         
         console.log('Verify OTP Response:', res.data)
         
-        if (res.data.success) {
-          // Create token and user data
-          let token, user;
-          
-          // If backend returns token and user (after you fix backend)
-          if (res.data.token && res.data.user) {
-            token = res.data.token;
-            user = res.data.user;
-          } 
-          // Fallback: Use token from login step or create new session
-          else {
-            token = loginToken || `verified-${userId}-${Date.now()}`;
-            user = {
-              id: userId,
-              email: email,
-              name: name || 'User',
-              verified: true,
-              loginTime: new Date().toISOString()
-            };
-          }
-          
-          // Save to localStorage
-          localStorage.setItem('token', token);
-          localStorage.setItem('user', JSON.stringify(user));
-          
-          // Update context
-          login(user);
-          
-          // Optional: Save keepLoggedIn preference
-          if (keepLoggedIn) {
-            localStorage.setItem('keepLoggedIn', 'true');
-          }
-          
-          toast.success('Authentication successful!');
-          navigate('/dashboard');
-        } else {
+       if (res.data.success) {
+  let token, user;
+
+  if (res.data.token && res.data.user) {
+    token = res.data.token;
+    user = res.data.user;
+  } else {
+    token = loginToken || `verified-${userId}-${Date.now()}`;
+    user = {
+      id: userId,
+      email: email,
+      name: name || 'User',
+      verified: true,
+      loginTime: new Date().toISOString()
+    };
+  }
+
+  if (state === 'Sign In') {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    login(user);
+
+    if (keepLoggedIn) {
+      localStorage.setItem('keepLoggedIn', 'true');
+    }
+
+    toast.success('Authentication successful!');
+    navigate('/dashboard');
+  } else {
+    toast.success('Signup successful! Please login to continue.');
+    setState('Sign In');
+    setStep(1);
+    setOtp('');
+    setLoginToken('');
+  }
+}
+ else {
           toast.error(res.data.message);
         }
       }
@@ -137,7 +138,6 @@ const Login = () => {
                 <label className='text-sm font-medium text-gray-700'>Date of Birth</label>
                 <input
                   type='date'
-                  required
                   value={dob}
                   onChange={(e) => setDob(e.target.value)}
                   className='mt-1 w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'

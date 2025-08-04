@@ -1,8 +1,7 @@
+import jwt from 'jsonwebtoken'
 import { EMAIL_VERIFY_TEMPLATE } from '../congfig/emailTemplates.js';
 import transporter from '../congfig/nodemailer.js'
 import userModel from '../models/userModel.js'
-
-import jwt from 'jsonwebtoken'
 
 export const register = async (req, res) => {
   try {
@@ -111,10 +110,10 @@ export const verifyOTP = async (req, res) => {
 
 export const googleLoginAndRegister = async (req, res) => {
   try {
-    const { name, email } = req.body; 
+    const { name, email } = req.body;
 
     const user = await userModel.findOne({ email });
-    
+
     if (user) {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       res.json({ success: true, token, user: { name: user.name, email: user.email } });
@@ -122,6 +121,7 @@ export const googleLoginAndRegister = async (req, res) => {
       const newUser = new userModel({
         name,
         email,
+        dob: new Date().toISOString().split('T')[0],
       });
 
       await newUser.save();
